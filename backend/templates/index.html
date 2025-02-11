@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <title>Chat Application</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #e5ddd5;
+        }
+        
+        .chat-container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        .sidebar {
+            width: 350px;
+            background: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+        
+        .sidebar h2 {
+            text-align: center;
+            padding: 15px;
+            background: #075e54;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .create-room, .join-room {
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .create-room input, .join-room input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        .create-room button, .join-room button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            background: #25d366;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .create-room button:hover, .join-room button:hover {
+            background: #1ebc5d;
+        }
+        
+        .chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 15px;
+        }
+        
+        #chat-room {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        #chat-box {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background: #efeae2;
+            gap: 10px;
+            border-radius: 5px;
+        }
+        
+        .message {
+            max-width: 75%;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 15px;
+            word-wrap: break-word;
+        }
+        
+        .sent {
+            background: #dcf8c6;
+            align-self: flex-end;
+            text-align: right;
+        }
+        
+        .received {
+            background: white;
+            align-self: flex-start;
+            text-align: left;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+        }
+        
+        .input-container input {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        
+        .input-container button {
+            padding: 12px;
+            border: none;
+            background: #075e54;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .input-container button:hover {
+            background: #064c46;
+        }
+        
+        .leave-btn {
+            background: #ff3b30;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="sidebar">
+            <h2>Rooms</h2>
+            <div class="create-room">
+                <input type="text" id="room" placeholder="New Room Name">
+                <button id="create-room">Create</button>
+            </div>
+            <div class="join-room">
+                <h3>Join a Room</h3>
+                <div id="room-buttons"></div>
+            </div>
+        </div>
+
+        <div class="chat-section">
+            <div id="join-container">
+                <h2>Enter Your Name</h2>
+                <input type="text" id="username" placeholder="Username">
+            </div>
+            <div id="chat-room" style="display: none;">
+                <h2 id="room-title"></h2>
+                <button id="leave-room">Leave Room</button>
+                <div id="chat-box"></div>
+                <div class="input-container">
+                    <input type="text" id="message" placeholder="Type a message...">
+                    <button id="send-message">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+let username = "";
+let room = "";
+
+// Load existing rooms from local storage
+const existingRooms = JSON.parse(localStorage.getItem("rooms")) || [];
+existingRooms.forEach(addRoomButton);
+
+document.getElementById("create-room").onclick = () => {
+    const roomInput = document.getElementById("room").value;
+    if (roomInput) {
+        socket.emit("create_room", { room: roomInput });
+        updateLocalStorage(roomInput);
+    }
+};
+
+document.getElementById("send-message").onclick = () => {
+    const messageInput = document.getElementById("message").value;
+    if (messageInput.trim()) {
+        socket.emit("message", { username, room, message: messageInput });
+        document.getElementById("message").value = "";
+    }
+};
+
+document.getElementById("leave-room").onclick = () => {
+    socket.emit("leave", { username, room });
+    leaveRoom();
+};
+
+document.getElementById("username").onchange = (e) => {
+    username = e.target.value;
+    document.getElementById("join-container").style.display = "none";
+};
+
+socket.on("room_created", (data) => {
+    addRoomButton(data.room);
+    updateLocalStorage(data.room);
+});
+
+socket.on("chat_history", (history) => {
+    const chatBox = document.getElementById("chat-box");
+    chatBox.innerHTML = "";
+    history.forEach(msg => {
+        displayMessage(msg);
+    });
+});
+
+socket.on("message", (msg) => {
+    displayMessage(msg);
+});
+
+socket.on("update_rooms", (data) => {
+    const roomButtons = document.getElementById("room-buttons");
+    roomButtons.innerHTML = ""; // Clear existing buttons
+    data.rooms.forEach(addRoomButton); // Re-add all rooms
+});
+
+function addRoomButton(roomName) {
+    const roomButtons = document.getElementById("room-buttons");
+    const button = document.createElement("button");
+    button.innerText = roomName;
+    button.onclick = () => joinRoom(roomName);
+    roomButtons.appendChild(button);
+}
+
+function joinRoom(selectedRoom) {
+    room = selectedRoom;
+    socket.emit("join", { username, room });
+    document.getElementById("room-title").innerText = `Room: ${room}`;
+    document.getElementById("chat-room").style.display = "block";
+}
+
+function leaveRoom() {
+    room = "";
+    document.getElementById("chat-room").style.display = "none";
+    document.getElementById("chat-box").innerHTML = "";
+}
+
+function displayMessage(msg) {
+    const chatBox = document.getElementById("chat-box");
+    const messageDiv = document.createElement("div");
+    messageDiv.className = msg.username === username ? "message sent" : "message received";
+    messageDiv.innerHTML = `
+        <span class="username">${msg.username}</span><br>
+        <span class="text">${msg.message}</span><br>
+        <span class="timestamp">${new Date(msg.timestamp).toLocaleTimeString()}</span>
+    `;
+    chatBox.appendChild(messageDiv);
+    chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom
+}
+
+function updateLocalStorage(roomName) {
+    const rooms = JSON.parse(localStorage.getItem("rooms")) || [];
+    if (!rooms.includes(roomName)) {
+        rooms.push(roomName);
+        localStorage.setItem("rooms", JSON.stringify(rooms));
+    }
+}
+    </script>
+</body>
+</html>

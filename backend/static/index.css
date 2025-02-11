@@ -1,0 +1,122 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+  body {
+    background-color: #e5ddd5;
+  }
+  
+  .chat-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 350px;
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+  }
+  
+  .sidebar h2 {
+    text-align: center;
+    padding: 15px;
+    background: #075e54;
+    color: white;
+  }
+  
+  .create-room, .join-room {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .create-room input, .join-room input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .create-room button, .join-room button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    background: #25d366;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .chat-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+  }
+  
+  .chat-box {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #efeae2;
+    border-radius: 5px;
+  }
+  
+  .message {
+    max-width: 75%;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 15px;
+    word-wrap: break-word;
+    margin: 5px 0;
+  }
+  
+  .sent {
+    background: #dcf8c6;
+    align-self: flex-end;
+  }
+  
+  .received {
+    background: white;
+    align-self: flex-start;
+  }
+  
+  .input-container {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+  }
+  
+  .input-container input {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .input-container button {
+    padding: 12px;
+    background: #075e54;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .leave-btn {
+    background: #ff3b30;
+    color: white;
+    padding: 8px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
