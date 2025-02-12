@@ -11,6 +11,7 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 rooms = {}
 
 # Start Ngrok to expose the app publicly
+ngrok.set_auth_token("2sqNNUoPtmbEGJVorBJ1WMh4M4T_6p59EEFMbJ5JG2V4WsZWc")
 public_url = ngrok.connect(5000).public_url
 print(f"🔥 Public URL: {public_url}")  # Print the public URL
 
