@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
 from datetime import datetime
+from pyngrok import ngrok  # Import Ngrok
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -8,6 +9,10 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Store messages and rooms
 rooms = {}
+
+# Start Ngrok to expose the app publicly
+public_url = ngrok.connect(5000).public_url
+print(f"🔥 Public URL: {public_url}")  # Print the public URL
 
 @app.route("/")
 def index():
@@ -21,9 +26,9 @@ def handle_connect():
 def create_room(data):
     room = data["room"]
     if room not in rooms:
-        rooms[room] = []  # Initialize chat history for the room
-        emit("room_created", {"room": room}, broadcast=True)  # Broadcast to all clients
-        update_room_list()  # Update the room list for all clients
+        rooms[room] = []  
+        emit("room_created", {"room": room}, broadcast=True)  
+        update_room_list()  
 
 @socketio.on("join")
 def handle_join(data):
@@ -31,17 +36,16 @@ def handle_join(data):
     room = data["room"]
     
     if room not in rooms:
-        rooms[room] = []  # If the room doesn't exist, create it
+        rooms[room] = []  
 
     join_room(room)
     
-    # Send existing messages in the room to the user who joined
     emit("chat_history", rooms[room], to=request.sid)
     
     message = {"username": "System", "message": f"{username} has joined the room!", "timestamp": datetime.now().isoformat()}
     rooms[room].append(message)
     send(message, to=room)
-    update_room_list()  # Update the room list when a user joins
+    update_room_list()  
     print(f"{username} joined room {room}")
 
 @socketio.on("message")
@@ -52,7 +56,7 @@ def handle_message(data):
         "message": data["message"],
         "timestamp": datetime.now().isoformat()
     }
-    rooms[room].append(msg)  # Store message in room history
+    rooms[room].append(msg)  
     send(msg, to=room)
 
 @socketio.on("leave")
@@ -64,7 +68,7 @@ def handle_leave(data):
     message = {"username": "System", "message": f"{username} has left the room.", "timestamp": datetime.now().isoformat()}
     rooms[room].append(message)
     send(message, to=room)
-    update_room_list()  # Update the room list when a user leaves
+    update_room_list()  
     print(f"{username} left room {room}")
 
 def update_room_list():
